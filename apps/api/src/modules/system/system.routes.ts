@@ -17,6 +17,7 @@ import { rateLimiterFor } from "../../middleware/rate-limiter";
 import { secureRouter } from "../../lib/secure-router";
 import * as fs from "./filesystem.controller";
 import * as setup from "./setup.controller";
+import * as certAuthorities from "../certificate-authorities/certificate-authority.controller";
 import * as selfApp from "./self-app.controller";
 import * as serverCheck from "./server-check.controller";
 import * as serversCtrl from "./servers.controller";
@@ -96,6 +97,18 @@ r.delete("/settings", { tag: "settings:admin" }, requireRole("owner"), setup.del
 r.get("/settings/email", { tag: "settings:read" }, setup.getEmailSettings);
 r.put("/settings/email", { tag: "settings:write" }, requireRole("owner"), setup.updateEmailSettings);
 r.post("/settings/email/test", { tag: "settings:write" }, requireRole("owner"), setup.sendTestEmail);
+
+/* ── ACME certificate-authority profiles (#256) ─────────────────── */
+// Same trust posture as the SMTP block above: instance-wide config whose
+// secret (the EAB HMAC) permits certificate issuance under the org's CA
+// account, so writes are owner-only. Reads are MASKED (hasEabKey boolean,
+// never the key) and stay settings:read for the dashboard/CLI listings.
+r.get("/certificate-authorities", { tag: "settings:read" }, certAuthorities.list);
+r.post("/certificate-authorities", { tag: "settings:write" }, requireRole("owner"), certAuthorities.create);
+r.patch("/certificate-authorities/:id", { tag: "settings:write" }, requireRole("owner"), certAuthorities.update);
+r.delete("/certificate-authorities/:id", { tag: "settings:write" }, requireRole("owner"), certAuthorities.remove);
+r.post("/certificate-authorities/:id/set-default", { tag: "settings:write" }, requireRole("owner"), certAuthorities.setDefault);
+r.post("/certificate-authorities/:id/test", { tag: "settings:write" }, requireRole("owner"), certAuthorities.test);
 
 /* ── Zero-auth → local-auth upgrade (no session yet) ────────────── */
 r.public(
