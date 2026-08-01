@@ -37,6 +37,7 @@ import { UpdatesTab } from "./_components/UpdatesTab";
 import { TeamTab } from "./_components/TeamTab";
 import { NotificationsTab } from "./_components/NotificationsTab";
 import { EmailSettings } from "./_components/EmailSettings";
+import { CertificateAuthorities } from "./_components/CertificateAuthorities";
 import { AuditTab } from "./_components/AuditTab";
 import { DataTransferTab } from "./_components/DataTransferTab";
 import {
@@ -155,6 +156,10 @@ function SettingsPageInner() {
                   sweep comes back clean. Self-hosted only: on the SaaS the edge
                   isn't the operator's to reconcile. */}
               {selfHosted && <UntrackedEdgeRoutes />}
+              {/* ACME CA profiles — instance-wide edge/issuance config (#256),
+                  so it lives with the other "this install" panels. Self-hosted
+                  only: the SaaS terminates TLS at Oblien's edge. */}
+              {selfHosted && <CertificateAuthorities />}
               {/* Full-DB export/import (owner-gated inside the component);
                   self-hosted only — SaaS has no portable DB. */}
               {selfHosted && <DataTransferTab />}
