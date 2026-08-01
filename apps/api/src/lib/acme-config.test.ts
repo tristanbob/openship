@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { CertificateAuthority } from "@repo/db";
 
-/** Swappable per test: what repos.certificateAuthority.findDefault returns. */
+/** Swappable per test: what repos.certificateAuthority returns. */
 let findDefaultImpl: () => Promise<CertificateAuthority | undefined>;
+let findByIdImpl: (id: string) => Promise<CertificateAuthority | undefined>;
 
 vi.mock("@repo/db", () => ({
   repos: {
     certificateAuthority: {
       findDefault: () => findDefaultImpl(),
+      findById: (id: string) => findByIdImpl(id),
     },
   },
 }));
@@ -52,6 +54,7 @@ const PROFILE: CertificateAuthority = {
 
 beforeEach(() => {
   findDefaultImpl = async () => undefined;
+  findByIdImpl = async () => undefined;
 });
 
 describe("resolveAcmeProviderOptions — source order", () => {
@@ -87,5 +90,40 @@ describe("resolveAcmeProviderOptions — source order", () => {
     findDefaultImpl = async () => ({ ...PROFILE, acmeEmail: null });
     const opts = await mod.resolveAcmeProviderOptions();
     expect(opts.acmeEmail).toBe("env-ops@example.test");
+  });
+});
+
+describe("resolveDomainAcmeOptions — the full per-domain chain", () => {
+  const PINNED: CertificateAuthority = {
+    ...PROFILE,
+    id: "ca_pinned",
+    name: "internal",
+    directoryUrl: "https://ca.internal.test/acme/directory",
+    isDefault: false,
+  };
+
+  it("a domain-pinned profile beats the instance default", async () => {
+    findDefaultImpl = async () => PROFILE;
+    findByIdImpl = async (id) => (id === "ca_pinned" ? PINNED : undefined);
+    const opts = await mod.resolveDomainAcmeOptions("ca_pinned");
+    expect(opts.acmeDirectoryUrl).toBe("https://ca.internal.test/acme/directory");
+  });
+
+  it("no pin → the instance default profile", async () => {
+    findDefaultImpl = async () => PROFILE;
+    const opts = await mod.resolveDomainAcmeOptions(null);
+    expect(opts.acmeDirectoryUrl).toBe("https://acme.zerossl.com/v2/DV90");
+  });
+
+  it("a dangling pin degrades to inherit — never blocks issuance", async () => {
+    findDefaultImpl = async () => PROFILE;
+    findByIdImpl = async () => undefined;
+    const opts = await mod.resolveDomainAcmeOptions("ca_deleted");
+    expect(opts.acmeDirectoryUrl).toBe("https://acme.zerossl.com/v2/DV90");
+  });
+
+  it("no pin, no default → the env layer", async () => {
+    const opts = await mod.resolveDomainAcmeOptions(undefined);
+    expect(opts.acmeDirectoryUrl).toBe("https://env.acme.example.test/directory");
   });
 });
