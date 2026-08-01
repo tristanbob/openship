@@ -25,6 +25,7 @@ import { logsCommand } from "./commands/logs";
 import { projectCommand } from "./commands/project";
 import { serviceCommand } from "./commands/service";
 import { domainCommand } from "./commands/domain";
+import { certsCommand } from "./commands/certs";
 
 // Self-host infrastructure
 import { serverCommand } from "./commands/server";
@@ -101,6 +102,7 @@ program.addCommand(logsCommand);
 program.addCommand(projectCommand);
 program.addCommand(serviceCommand);
 program.addCommand(domainCommand);
+program.addCommand(certsCommand);
 
 // Self-host infrastructure (secondary)
 program.addCommand(serverCommand);
