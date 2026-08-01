@@ -40,7 +40,15 @@ const MISSING_BASELINE: Record<string, number> = {
   // else, and that built files stay on disk. A mistranslation is somebody taking a
   // live site offline, or leaving a forgotten one serving. English falls through via
   // deepMerge, so the card is correct in every locale, just not localised.
-  settings: 1136,
+  //
+  // +304: settings.certificateAuthorities — 38 English-first keys for the ACME
+  // CA-profile card (#256). Same class as edgeOrphans/sourceAccess: the copy
+  // decides how an operator handles a certificate-issuance credential — that a
+  // blank HMAC field KEEPS the stored key (a mistranslation here is someone
+  // pasting a secret twice "to be safe", or wiping one they meant to keep), and
+  // what "Make default" changes for every future issuance. English falls through
+  // via deepMerge, so the card is correct everywhere, just not localised.
+  settings: 1440,
   emailsAdmin: 628,
   // +360: permissions.sourceAccess — 45 keys for the source access modal and its
   // repository path tree,

@@ -43,6 +43,37 @@ export interface InstanceSettings {
   defaultBuildMode?: "auto" | "server" | "local";
 }
 
+/** An ACME CA profile as returned by the API — the HMAC key is never included. */
+export interface CaProfile {
+  id: string;
+  name: string;
+  kind: string;
+  directoryUrl: string | null;
+  acmeEmail: string | null;
+  keyType: string | null;
+  caBundle: string | null;
+  tosAgreed: boolean;
+  eabKid: string | null;
+  hasEabKey: boolean;
+  isDefault: boolean;
+  lastVerifiedAt: string | null;
+  lastVerifyError: string | null;
+  createdAt: string;
+}
+
+export interface CaProfileInput {
+  name?: string;
+  kind?: string;
+  directoryUrl?: string | null;
+  acmeEmail?: string | null;
+  keyType?: string | null;
+  caBundle?: string | null;
+  tosAgreed?: boolean;
+  eabKid?: string | null;
+  eabHmacKey?: string | null;
+  isDefault?: boolean;
+}
+
 /** Instance SMTP config as returned by the API — password is never included. */
 export interface InstanceEmailSettings {
   configured: boolean;
@@ -352,6 +383,29 @@ export const systemApi = {
   /** Send a test email through the saved instance SMTP. */
   sendTestEmail: (to: string) =>
     api.post<{ ok: boolean; error?: string }>(endpoints.system.emailSettingsTest, { to }),
+
+  /** ACME certificate-authority profiles (masked — hasEabKey, never the key). */
+  listCertificateAuthorities: () =>
+    api.get<{ data: CaProfile[] }>(endpoints.system.certificateAuthorities),
+
+  createCertificateAuthority: (data: CaProfileInput) =>
+    api.post<{ data: CaProfile }>(endpoints.system.certificateAuthorities, data),
+
+  /** Blank/masked eabHmacKey keeps the stored key; null clears it (with the kid). */
+  updateCertificateAuthority: (id: string, data: CaProfileInput) =>
+    api.patch<{ data: CaProfile }>(endpoints.system.certificateAuthority(id), data),
+
+  removeCertificateAuthority: (id: string) =>
+    api.delete<{ data: { ok: boolean } }>(endpoints.system.certificateAuthority(id)),
+
+  setDefaultCertificateAuthority: (id: string) =>
+    api.post<{ data: CaProfile }>(endpoints.system.certificateAuthoritySetDefault(id)),
+
+  /** Validate the profile against its ACME directory; stamps lastVerifiedAt/-Error. */
+  testCertificateAuthority: (id: string) =>
+    api.post<{ data: { result: CaProfile; ok: boolean; code: string; message: string } }>(
+      endpoints.system.certificateAuthorityTest(id),
+    ),
 
   /** Test SSH connection with credentials (without saving) */
   testConnection: (data: {
