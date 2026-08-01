@@ -93,8 +93,37 @@ certificate under the newly configured CA at its next renewal instead of
 renewing it — a one-time reissue per domain, after which normal renewal
 resumes. Existing certificates keep serving traffic until that happens.
 
+## Named CA profiles (CLI)
+
+Profiles stored in the control plane take precedence over the environment
+variables above and can be managed without a restart:
+
+```bash
+# HMAC via env var — never pass it as a bare argument
+export ZEROSSL_HMAC=your-base64url-hmac
+openship certs ca add zerossl --kind zerossl \
+  --email ops@example.com --eab-kid your-kid --eab-hmac-key-env ZEROSSL_HMAC --default
+
+# or via stdin (e.g. from a secret manager)
+secret-tool lookup acme hmac | openship certs ca add internal --kind custom \
+  --directory https://ca.internal.example/acme/acme/directory \
+  --eab-kid provisioned-kid --eab-hmac-key-stdin \
+  --ca-bundle /etc/ssl/private/acme-root.pem
+
+openship certs ca test zerossl        # validates the directory + EAB, issues nothing
+openship certs ca list
+openship certs ca set-default zerossl
+```
+
+The resolution order is: default CA profile → `OPENSHIP_ACME_*` environment
+variables → Let's Encrypt. `certs ca test` fetches the ACME directory and
+cross-checks its EAB requirement against the profile; it does not create an
+ACME account, so a cryptographically wrong HMAC value still surfaces at first
+issuance rather than at test time.
+
 ## Current scope
 
-These settings define one instance-wide CA. Persistent named CA profiles and
-per-project/per-domain overrides require a database and API design and are not
-yet exposed by the dashboard or CLI.
+Named CA profiles are managed via the CLI (`openship certs ca`) and the
+`/api/system/certificate-authorities` routes; one profile can be the instance
+default. Per-project/per-domain overrides and a dashboard settings panel are
+not exposed yet.
