@@ -575,6 +575,13 @@
       "when": 1786054907324,
       "tag": "0081_project_readiness_repair",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1786054967324,
+      "tag": "0082_certificate_authority",
+      "breakpoints": true
     }
   ]
 }

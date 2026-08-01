@@ -207,7 +207,7 @@ export async function ensureEdgeStream(c: Context) {
         const edge = await ensureEdge(
           executor,
           (p) => installer(executor, onLog, withPinnedEdgeImage({ promptUser: p })),
-          { promptUser, onLog, nginx: resolveAcmeProviderOptions() },
+          { promptUser, onLog, nginx: await resolveAcmeProviderOptions() },
         );
         if (edge.migrated && !edge.ok) {
           throw new Error("Edge takeover failed — rolled back to the previous proxy.");

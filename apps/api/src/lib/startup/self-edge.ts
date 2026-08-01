@@ -106,7 +106,7 @@ async function runEnsure(
         status,
         sites: scan.sites,
         acmeEmail: env.OPENSHIP_ACME_EMAIL,
-        nginx: resolveAcmeProviderOptions(),
+        nginx: await resolveAcmeProviderOptions(),
         extraRoutes: [],
         // Pin the edge the takeover installs. `setDefaultEdgeImage` at boot already
         // covers this, but state it here too: this is the ONE caller of

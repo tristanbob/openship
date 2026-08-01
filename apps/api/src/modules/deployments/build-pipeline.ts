@@ -1228,7 +1228,7 @@ function buildDeployEnvironment(
                       onLog: systemLog,
                       promptUser: p,
                     }),
-                  { promptUser, onLog: systemLog, nginx: resolveAcmeProviderOptions() },
+                  { promptUser, onLog: systemLog, nginx: await resolveAcmeProviderOptions() },
                 );
                 if (edge.migrated && !edge.ok) {
                   // ensureEdge already rolled back to the previous proxy — we

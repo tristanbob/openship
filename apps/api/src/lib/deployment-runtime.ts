@@ -362,7 +362,7 @@ export async function resolveTargetPlatform(
         runtime: runtimeMode,
         executor,
         docker: runtimeMode === "docker" ? { transport: "socket" as const } : undefined,
-        nginx: resolveAcmeProviderOptions(),
+        nginx: await resolveAcmeProviderOptions(),
         provisionLock: createProvisionLock("provision:local"),
       });
     }
@@ -373,7 +373,7 @@ export async function resolveTargetPlatform(
       executor, // ← managed executor from pool
       ssh: ssh!,
       docker: runtimeMode === "docker" ? toDockerSshTransport(ssh!, executor) : undefined,
-      nginx: resolveAcmeProviderOptions(),
+      nginx: await resolveAcmeProviderOptions(),
       // Serialize provisioning per target server, so concurrent deploys (across
       // projects / single-app + compose) never race apt/openresty/networks/state.
       provisionLock: createProvisionLock(`provision:server:${id}`),
@@ -388,7 +388,7 @@ export async function resolveTargetPlatform(
     docker: runtimeMode === "docker"
       ? { transport: "socket" as const }
       : undefined,
-    nginx: resolveAcmeProviderOptions(),
+    nginx: await resolveAcmeProviderOptions(),
     provisionLock: createProvisionLock("provision:local"),
   });
 }
