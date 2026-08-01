@@ -88,6 +88,15 @@ export interface AcmeCaCheckInput {
 const ACME_LE_PRODUCTION = "https://acme-v02.api.letsencrypt.org/directory";
 const ACME_PROBE_TIMEOUT_MS = 10_000;
 
+/**
+ * RFC 8555 §6.1 REQUIRES an ACME client to send a User-Agent naming the ACME
+ * software and the underlying HTTP client. This is not decorative: Pebble
+ * rejects a request without one outright — `400 malformed: All requests MUST
+ * include a User-Agent header` — so a probe missing it reports "HTTP 400"
+ * against a real CA and the whole config-time check is useless.
+ */
+const ACME_USER_AGENT = `openship-acme-check/1 node/${process.versions.node}`;
+
 /** Minimal GET with optional custom trust root; rejects on network/TLS errors. */
 function fetchJson(
   url: URL,
@@ -97,7 +106,12 @@ function fetchJson(
   return new Promise((resolve, reject) => {
     const r = req(
       url,
-      { method: "GET", timeout: ACME_PROBE_TIMEOUT_MS, ...(ca ? { ca } : {}) },
+      {
+        method: "GET",
+        timeout: ACME_PROBE_TIMEOUT_MS,
+        headers: { "user-agent": ACME_USER_AGENT, accept: "application/json" },
+        ...(ca ? { ca } : {}),
+      },
       (res) => {
         let body = "";
         res.setEncoding("utf8");
