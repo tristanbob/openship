@@ -55,6 +55,13 @@ vi.mock("@repo/db", () => ({
       findById: vi.fn(async (id: string) => ({ id, organizationId: "org_1", meta: {} })),
     },
     server: { findLocal: vi.fn(async () => null) },
+    // domain-ssl resolves the domain's ACME options (pinned CA → default → env)
+    // before picking the provider; none stored here → the env chain, which is
+    // exactly what these gate tests ran under before profiles existed.
+    certificateAuthority: {
+      findDefault: vi.fn(async () => undefined),
+      findById: vi.fn(async () => undefined),
+    },
   },
 }));
 
