@@ -3,6 +3,10 @@
 OpenShip uses Certbot on the managed OpenResty edge. With no ACME configuration,
 certificate issuance and renewal continue to use Let's Encrypt production.
 
+To try any of this without touching a real CA, see
+[Testing alternate ACME CAs locally](acme-testing.md) — a throwaway
+EAB-requiring CA in Docker.
+
 Set the following variables in the environment used to start OpenShip, then
 restart the API/control plane:
 
