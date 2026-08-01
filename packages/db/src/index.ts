@@ -155,6 +155,9 @@ export {
   type IncomingWebhook,
   type NewIncomingWebhook,
   type WebhookDelivery,
+  createCertificateAuthorityRepo,
+  type CertificateAuthority,
+  type NewCertificateAuthority,
 } from "./repos";
 
 // ─── Drizzle operators (re-exported for convenience) ─────────────────────────

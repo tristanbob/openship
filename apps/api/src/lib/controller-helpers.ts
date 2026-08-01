@@ -86,7 +86,7 @@ import {
 } from "@repo/adapters";
 import { env } from "../config/env";
 import { isOblienConfigured } from "./platform-mode";
-import { resolveAcmeProviderOptions } from "./acme-config";
+import { envAcmeProviderOptions } from "./acme-config";
 
 // Re-export the platform accessor so existing callers that do
 // `import { platform } from "@/lib/controller-helpers"` keep working
@@ -208,7 +208,11 @@ export function resolvePlatformConfig(): PlatformConfig {
   return {
     target: "selfhosted",
     runtime: env.DEPLOY_MODE === "bare" ? "bare" : "docker",
-    nginx: resolveAcmeProviderOptions(),
+    // Env layer only: this feeds the BOOT-time initPlatform, which is sync and
+    // runs before the DB is guaranteed readable. It is only the last-resort SSL
+    // anchor — every real issuance path re-resolves per call (DB-first) via
+    // resolveAcmeProviderOptions in deployment-runtime / the takeover paths.
+    nginx: envAcmeProviderOptions(),
   };
 }
 

@@ -79,6 +79,11 @@ export {
   type InstanceSettings,
   type NewInstanceSettings,
 } from "./instance-settings.repo";
+export {
+  createCertificateAuthorityRepo,
+  type CertificateAuthority,
+  type NewCertificateAuthority,
+} from "./certificate-authority.repo";
 export { createServerRepo, type Server, type NewServer } from "./server.repo";
 export {
   createServerGithubAuthRepo,
@@ -220,6 +225,7 @@ import { createServiceRepo } from "./service.repo";
 import { createServiceDeploymentRepo } from "./service-deployment.repo";
 import { createSettingsRepo } from "./settings.repo";
 import { createInstanceSettingsRepo } from "./instance-settings.repo";
+import { createCertificateAuthorityRepo } from "./certificate-authority.repo";
 import { createServerRepo } from "./server.repo";
 import { createServerGithubAuthRepo } from "./server-github-auth.repo";
 import { createGithubDeployKeyRepo } from "./github-deploy-key.repo";
@@ -291,6 +297,7 @@ export const repos = {
   serviceDeployment: createServiceDeploymentRepo(db),
   settings: createSettingsRepo(db),
   instanceSettings: createInstanceSettingsRepo(db),
+  certificateAuthority: createCertificateAuthorityRepo(db),
   server: createServerRepo(db),
   serverGithubAuth: createServerGithubAuthRepo(db),
   githubDeployKey: createGithubDeployKeyRepo(db),

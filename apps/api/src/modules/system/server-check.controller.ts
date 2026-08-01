@@ -603,7 +603,7 @@ export async function installStream(c: Context) {
                 onLog,
                 acmeEmail: config?.acmeEmail,
                 nginx: {
-                  ...resolveAcmeProviderOptions(),
+                  ...(await resolveAcmeProviderOptions()),
                   ...(config?.acmeEmail ? { acmeEmail: config.acmeEmail } : {}),
                 },
               },

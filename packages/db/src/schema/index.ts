@@ -11,6 +11,7 @@ export { githubInstallState } from "./github-install-state";
 export { projectGroup, project, envVar } from "./project";
 export { deployment, buildSession } from "./deployment";
 export { domain } from "./domain";
+export { certificateAuthority } from "./certificate-authority";
 export { routeRule } from "./route-rule";
 export { webhookSource } from "./webhook-source";
 export {
