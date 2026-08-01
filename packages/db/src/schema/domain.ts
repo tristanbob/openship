@@ -9,6 +9,7 @@ import {
 import { project } from "./project";
 import { service } from "./service";
 import { webhookSource } from "./webhook-source";
+import { certificateAuthority } from "./certificate-authority";
 
 // ─── Domains ─────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,16 @@ export const domain = pgTable("domain", {
   /* ── SSL ─────────────────────────────────────────────────────────────── */
   /** SSL status: none | provisioning | active | expired | error */
   sslStatus: text("ssl_status").notNull().default("none"),
+  /**
+   * Pinned ACME CA profile for THIS domain. NULL = inherit (the
+   * rollbackWindow pattern): default certificate_authority profile →
+   * OPENSHIP_ACME_* env → Let's Encrypt. Resolved in exactly one place:
+   * `resolveDomainAcmeOptions` (apps/api/src/lib/acme-config.ts). SET NULL on
+   * profile delete so removing a CA degrades the domain to inherit, never
+   * blocks issuance.
+   */
+  certificateAuthorityId: text("certificate_authority_id")
+    .references(() => certificateAuthority.id, { onDelete: "set null" }),
   /** Issuer (e.g. "letsencrypt", "oblien") */
   sslIssuer: text("ssl_issuer"),
   /** When the current certificate expires */

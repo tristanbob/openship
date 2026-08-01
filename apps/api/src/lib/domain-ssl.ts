@@ -6,6 +6,7 @@ import { env } from "../config/env";
 import { platform } from "./controller-helpers";
 import { createProvisionLock } from "./provision-lock";
 import { resolveDeploymentPlatform, type DeploymentMeta } from "./deployment-runtime";
+import { resolveDomainAcmeOptions, type AcmeProviderOptions } from "./acme-config";
 
 /**
  * The per-domain issuance lock key. EVERY path that can open an ACME order
@@ -213,14 +214,19 @@ async function persistSslResult(
  * Falls back to the global platform when the project has no active deployment
  * yet (single-box installs resolve to the same local provider either way).
  */
-async function resolveSslProvider(project: Project): Promise<ResolvedSslProvider> {
+async function resolveSslProvider(
+  project: Project,
+  /** The domain's pre-resolved ACME options (pinned CA → default → env);
+   *  undefined = the instance chain, resolved inside the platform builder. */
+  acmeOptions?: AcmeProviderOptions,
+): Promise<ResolvedSslProvider> {
   const depId = project.activeDeploymentId;
   if (depId) {
     const dep = await repos.deployment.findById(depId);
     if (dep) {
       const meta = (dep.meta ?? {}) as DeploymentMeta;
       try {
-        const resolved = await resolveDeploymentPlatform(meta, { organizationId: dep.organizationId });
+        const resolved = await resolveDeploymentPlatform(meta, { organizationId: dep.organizationId, acmeOptions });
         return { ssl: resolved.platform.ssl, lockScope: meta.serverId ?? LOCAL_ACME_SCOPE };
       } catch {
         // Deploy target unresolvable — fall through to the host-anchored fallback.
@@ -245,7 +251,7 @@ async function resolveSslProvider(project: Project): Promise<ResolvedSslProvider
       try {
         const resolved = await resolveDeploymentPlatform(
           { serverId: local.id } as DeploymentMeta,
-          { organizationId: project.organizationId },
+          { organizationId: project.organizationId, acmeOptions },
         );
         return { ssl: resolved.platform.ssl, lockScope: local.id };
       } catch {
@@ -304,7 +310,10 @@ export async function manageDomainSsl(
     return notLocalResult(domainRecord.hostname);
   }
 
-  const { ssl, lockScope } = await resolveSslProvider(project);
+  const { ssl, lockScope } = await resolveSslProvider(
+    project,
+    await resolveDomainAcmeOptions(domainRecord.certificateAuthorityId),
+  );
   // `verify` is a read-only cert inspection (no ACME) → no lock. `provision`/
   // `renew` can open an ACME order, so serialize them per-hostname on the shared
   // issue lock — this is what stops the ssl:renew scheduler (which calls us with
@@ -344,7 +353,10 @@ export async function provisionDomainCertForVerify(
     projectId: opts.projectId,
     allowUnverified: true,
   });
-  const { ssl, lockScope } = await resolveSslProvider(project);
+  const { ssl, lockScope } = await resolveSslProvider(
+    project,
+    await resolveDomainAcmeOptions(domainRecord.certificateAuthorityId),
+  );
 
   // Serialize issuance per-hostname, and re-check the cert INSIDE the lock.
   // This closes the TOCTOU: two concurrent Verify hits (or Verify racing the

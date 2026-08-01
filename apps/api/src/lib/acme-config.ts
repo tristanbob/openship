@@ -72,3 +72,23 @@ export async function resolveAcmeProviderOptions(): Promise<AcmeProviderOptions>
   if (profile) return acmeOptionsFromProfile(profile);
   return envAcmeProviderOptions();
 }
+
+/**
+ * The FULL precedence chain, for operations that act on one domain — the ONLY
+ * place it lives (the rollbackWindow rule: one resolver, no second reader):
+ *
+ *   domain-pinned profile → default profile → env → Let's Encrypt.
+ *
+ * Takes the domain row's `certificateAuthorityId` (the caller already loaded
+ * the row). A dangling id degrades to inherit — same posture as the FK's
+ * ON DELETE SET NULL — rather than blocking issuance.
+ */
+export async function resolveDomainAcmeOptions(
+  pinnedCaId: string | null | undefined,
+): Promise<AcmeProviderOptions> {
+  if (pinnedCaId) {
+    const profile = await repos.certificateAuthority.findById(pinnedCaId).catch(() => undefined);
+    if (profile) return acmeOptionsFromProfile(profile);
+  }
+  return resolveAcmeProviderOptions();
+}

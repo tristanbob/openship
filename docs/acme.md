@@ -115,15 +115,26 @@ openship certs ca list
 openship certs ca set-default zerossl
 ```
 
-The resolution order is: default CA profile → `OPENSHIP_ACME_*` environment
-variables → Let's Encrypt. `certs ca test` fetches the ACME directory and
-cross-checks its EAB requirement against the profile; it does not create an
-ACME account, so a cryptographically wrong HMAC value still surfaces at first
-issuance rather than at test time.
+The resolution order is: domain-pinned CA profile → default CA profile →
+`OPENSHIP_ACME_*` environment variables → Let's Encrypt. `certs ca test`
+fetches the ACME directory and cross-checks its EAB requirement against the
+profile; it does not create an ACME account, so a cryptographically wrong HMAC
+value still surfaces at first issuance rather than at test time.
+
+A domain can pin its issuance to a specific profile — "internal CA for
+`*.internal`, public CA for customer-facing domains":
+
+```bash
+openship domain add app.internal.example -p <project> --ca internal
+```
+
+Removing a profile degrades its pinned domains to the inherit chain instead of
+blocking their renewal.
 
 ## Current scope
 
-Named CA profiles are managed via the CLI (`openship certs ca`) and the
-`/api/system/certificate-authorities` routes; one profile can be the instance
-default. Per-project/per-domain overrides and a dashboard settings panel are
-not exposed yet.
+Named CA profiles are managed via the CLI (`openship certs ca`), the
+`/api/system/certificate-authorities` routes, and the dashboard's Instance
+settings panel; one profile can be the instance default, and a domain can pin
+one with `--ca` at add time. A dashboard picker for the per-domain pin and a
+per-project default are not exposed yet.

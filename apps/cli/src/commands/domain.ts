@@ -112,12 +112,18 @@ const addCmd = new Command("add")
   .argument("<hostname>", "Domain hostname (e.g. app.example.com)")
   .requiredOption("-p, --project <id>", "Project ID to attach the domain to")
   .option("--primary", "Mark this domain as the project's primary", false)
+  .option("--ca <name>", "Pin issuance to a CA profile (see `openship certs ca list`)")
   .action(async (hostname: string, opts) => {
     const sp = spin(`Adding ${hostname}…`);
     try {
       const res = await apiRequest<{ data: DomainRow; records: RecordsResult }>("/domains", {
         method: "POST",
-        body: JSON.stringify({ projectId: opts.project, hostname, isPrimary: !!opts.primary }),
+        body: JSON.stringify({
+          projectId: opts.project,
+          hostname,
+          isPrimary: !!opts.primary,
+          ...(opts.ca ? { certificateAuthority: opts.ca } : {}),
+        }),
       });
       sp?.succeed(`Added ${res.data.hostname}`);
       if (isJsonMode()) {

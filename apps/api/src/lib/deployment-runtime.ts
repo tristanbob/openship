@@ -17,7 +17,7 @@ import { platform } from "./controller-helpers";
 import { buildSshConfig, sshManager } from "./ssh-manager";
 import { createProvisionLock } from "./provision-lock";
 import { isLocalHostRow } from "./box-org";
-import { resolveAcmeProviderOptions } from "./acme-config";
+import { resolveAcmeProviderOptions, type AcmeProviderOptions } from "./acme-config";
 
 /**
  * The shape of `deployment.meta` JSONB. Snapshotted per-deploy —
@@ -271,7 +271,12 @@ async function resolveCloudPlatformForOrg(organizationId?: string): Promise<Plat
 
 export async function resolveDeploymentPlatform(
   snapshot: DeploymentMeta,
-  opts?: { organizationId?: string; basePlatform?: Platform },
+  opts?: {
+    organizationId?: string;
+    basePlatform?: Platform;
+    /** Pre-resolved ACME options (a domain-pinned CA) — see resolveDomainAcmeOptions. */
+    acmeOptions?: AcmeProviderOptions;
+  },
 ): Promise<ResolvedDeploymentPlatform> {
   const basePlatform = opts?.basePlatform ?? platform();
   const effectiveTarget = resolveEffectiveTarget(basePlatform.target, snapshot);
@@ -284,6 +289,7 @@ export async function resolveDeploymentPlatform(
       runtimeMode,
       snapshot.serverId,
       opts?.organizationId,
+      opts?.acmeOptions,
     );
     return {
       platform: targetPlatform,
@@ -342,6 +348,8 @@ export async function resolveTargetPlatform(
   runtimeMode: RuntimeMode = "bare",
   serverId?: string,
   organizationId?: string,
+  /** Pre-resolved ACME options (a domain-pinned CA); default = instance chain. */
+  acmeOptions?: AcmeProviderOptions,
 ): Promise<Platform> {
   // For SSH server targets, use the managed connection pool
   if (target === "server") {
@@ -362,7 +370,7 @@ export async function resolveTargetPlatform(
         runtime: runtimeMode,
         executor,
         docker: runtimeMode === "docker" ? { transport: "socket" as const } : undefined,
-        nginx: await resolveAcmeProviderOptions(),
+        nginx: acmeOptions ?? (await resolveAcmeProviderOptions()),
         provisionLock: createProvisionLock("provision:local"),
       });
     }
@@ -373,7 +381,7 @@ export async function resolveTargetPlatform(
       executor, // ← managed executor from pool
       ssh: ssh!,
       docker: runtimeMode === "docker" ? toDockerSshTransport(ssh!, executor) : undefined,
-      nginx: await resolveAcmeProviderOptions(),
+      nginx: acmeOptions ?? (await resolveAcmeProviderOptions()),
       // Serialize provisioning per target server, so concurrent deploys (across
       // projects / single-app + compose) never race apt/openresty/networks/state.
       provisionLock: createProvisionLock(`provision:server:${id}`),
@@ -388,7 +396,7 @@ export async function resolveTargetPlatform(
     docker: runtimeMode === "docker"
       ? { transport: "socket" as const }
       : undefined,
-    nginx: await resolveAcmeProviderOptions(),
+    nginx: acmeOptions ?? (await resolveAcmeProviderOptions()),
     provisionLock: createProvisionLock("provision:local"),
   });
 }

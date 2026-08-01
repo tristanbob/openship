@@ -222,6 +222,22 @@ export async function addDomain(
    */
   const preexisting = await untrackedSiteFor(hostname);
 
+  // A pinned CA (id or name) must exist NOW — a typo'd profile would otherwise
+  // surface as a certbot failure at issuance, the exact failure mode #256's
+  // config-time-errors criterion exists to prevent. Omitted = inherit (NULL).
+  let certificateAuthorityId: string | null = null;
+  if (data.certificateAuthority) {
+    const ca =
+      (await repos.certificateAuthority.findById(data.certificateAuthority)) ??
+      (await repos.certificateAuthority.findByName(data.certificateAuthority));
+    if (!ca) {
+      throw new ValidationError(
+        `No certificate authority named "${data.certificateAuthority}" — see \`openship certs ca list\``,
+      );
+    }
+    certificateAuthorityId = ca.id;
+  }
+
   const token = generateToken(hostname);
 
   const domain = await repos.domain.create({
@@ -236,6 +252,7 @@ export async function addDomain(
     status: "pending",
     isPrimary: data.isPrimary ?? false,
     externalIngress: data.externalIngress ?? false,
+    certificateAuthorityId,
     verificationToken: token,
     redirectTo: redirect.redirectTo,
     redirectStatus: redirect.redirectStatus,

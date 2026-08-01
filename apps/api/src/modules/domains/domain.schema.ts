@@ -26,6 +26,9 @@ export const AddDomainBody = Type.Object({
     pattern: "^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$",
   }),
   isPrimary: Type.Optional(Type.Boolean({ default: false })),
+  /** Pin THIS domain's issuance to a named CA profile (id or name). Omitted =
+   *  inherit: default profile → OPENSHIP_ACME_* env → Let's Encrypt. */
+  certificateAuthority: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
   /** Externally-managed ingress + TLS (Cloudflare Tunnel, LB): verify via TXT
    *  only, skip certbot, serve plain HTTP. Domain need not resolve to the box. */
   externalIngress: Type.Optional(Type.Boolean({ default: false })),
